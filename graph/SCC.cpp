@@ -3,15 +3,15 @@ using namespace std;
 
 #define ll long long
 
-// adjList: الجراف الأصلي
-// comps: كل SCC عبارة عن vector
-// dagList: الجراف بعد الضغط (DAG)
+// adjList: original graph
+// comps: list of SCCs (each component is a vector of nodes)
+// dagList: compressed graph (DAG)
 vector<vector<int>> adjList, comps, dagList;
 
-// inStack: هل node موجودة في الستاك؟
-// lowLink, dfn: مستخدمين في Tarjan
-// comp: رقم الـ component لكل node
-// inDeg / outDeg: درجات الـ DAG
+// inStack: whether node is currently in stack
+// lowLink, dfn: used in Tarjan algorithm
+// comp: component id for each node
+// inDeg / outDeg: degrees in the DAG
 vector<int> inStack, lowLink, dfn, comp, inDeg, outDeg;
 
 stack<int> stk;
@@ -20,30 +20,30 @@ int ndfn; // timer
 // ================== TARJAN ==================
 void tarjan(int node) {
 
-    // أول ما ندخل node
+    // initialize discovery time and low link
     lowLink[node] = dfn[node] = ndfn++;
 
     inStack[node] = 1;
     stk.push(node);
 
-    // نمشي على الجيران
+    // traverse neighbors
     for (int ch : adjList[node]) {
 
-        // لو لسه مزرناهوش
+        // if not visited
         if (dfn[ch] == -1) {
             tarjan(ch);
 
-            // نحدث أقل reachable time
+            // update lowLink
             lowLink[node] = min(lowLink[node], lowLink[ch]);
         } 
 
-        // لو في stack → back edge
+        // back edge (node still in stack)
         else if (inStack[ch]) {
             lowLink[node] = min(lowLink[node], dfn[ch]);
         }
     }
 
-    // لو node دي root بتاع SCC
+    // if node is root of SCC
     if (lowLink[node] == dfn[node]) {
 
         comps.push_back(vector<int>());
@@ -54,7 +54,7 @@ void tarjan(int node) {
 
             inStack[x] = 0;
 
-            // حط node في الـ component الحالي
+            // assign node to current component
             comp[x] = (int)comps.size() - 1;
             comps.back().push_back(x);
 
@@ -66,7 +66,7 @@ void tarjan(int node) {
 // ================== BUILD SCC ==================
 void buildSCC(int n) {
 
-    // initialize
+    // initialize arrays
     inStack.assign(n, 0);
     lowLink.assign(n, 0);
     dfn.assign(n, -1);
@@ -77,7 +77,7 @@ void buildSCC(int n) {
     comps.clear();
     ndfn = 0;
 
-    // شغل Tarjan على كل node
+    // run Tarjan on all nodes
     for (int i = 0; i < n; i++) {
         if (dfn[i] == -1)
             tarjan(i);
@@ -87,27 +87,27 @@ void buildSCC(int n) {
 // ================== BUILD DAG ==================
 void buildDAG() {
 
-    int csz = comps.size(); // عدد الـ SCC
+    int csz = comps.size(); // number of SCCs
 
     dagList.assign(csz, vector<int>());
     inDeg.assign(csz, 0);
     outDeg.assign(csz, 0);
 
-    // set علشان نشيل duplicate edges
+    // use set to remove duplicate edges
     set<pair<int,int>> edges;
 
-    // لف على كل edge في الجراف الأصلي
+    // iterate over original edges
     for (int i = 0; i < (int)adjList.size(); i++) {
         for (int j : adjList[i]) {
 
-            // لو edge بين component مختلفين
+            // edge between different components
             if (comp[i] != comp[j]) {
                 edges.insert({comp[i], comp[j]});
             }
         }
     }
 
-    // بناء DAG
+    // build DAG
     for (auto e : edges) {
         int u = e.first;
         int v = e.second;
@@ -133,27 +133,27 @@ int main() {
         int n, m;
         cin >> n >> m;
 
-      
+        // read graph
         adjList.assign(n, vector<int>());
 
         for (int i = 0; i < m; i++) {
             int u, v;
             cin >> u >> v;
 
-            u--, v--; // zero-based
+            u--, v--; // convert to 0-based
 
             adjList[u].push_back(v);
         }
 
-        // 1) استخراج SCC
+        // 1) build SCC
         buildSCC(n);
 
-        // 2) تحويله إلى DAG
+        // 2) build compressed DAG
         buildDAG();
 
         int csz = comps.size();
 
-        // لو كله component واحدة → already strongly connected
+        // if already one component → already strongly connected
         if (csz == 1) {
             cout << 0 << "\n";
             continue;
@@ -161,13 +161,13 @@ int main() {
 
         int sources = 0, sinks = 0;
 
-        // حساب عدد الـ sources و sinks في الـ DAG
+        // count sources and sinks in DAG
         for (int i = 0; i < csz; i++) {
             if (inDeg[i] == 0) sources++;  // no incoming edges
             if (outDeg[i] == 0) sinks++;   // no outgoing edges
         }
 
-        // أقل عدد edges لتحويله strongly connected
+        // minimum edges needed to make graph strongly connected
         cout << max(sources, sinks) << "\n";
     }
 
