@@ -16,9 +16,10 @@ vector<int> vis,low,dep;
 vector<vector<int>>adj;
 vector<pair<int,int>>ans;
 bool bridge=false;
+int timer=0;
 void dfs(int v,int p) {
     vis[v]=1;
-    low[v]=dep[v];
+    low[v]=dep[v]=timer++;
 
     for (auto u:adj[v]) {
 
@@ -34,7 +35,6 @@ void dfs(int v,int p) {
         else {
             //tree edge
             ans.push_back({u,v});
-            dep[u]=dep[v]+1;
             dfs(u,v);
             low[v]=min(low[v],low[u]);
             if (low[u]>dep[v]) {
@@ -75,10 +75,9 @@ int32_t main() {
 
 
     int t=1;
-  //  cin >> t;
+    //  cin >> t;
     while (t--) {
         solve();
     }
     return 0;
 }
-
