@@ -1,11 +1,22 @@
-struct Trie{
-    struct Node{
-        Node* child[26];
-        int IsEnd, Prefix;
+const int N = 1e5 + 5;
 
-        Node(){
+struct Trie{
+
+    multiset<int> level[N];
+
+    struct Node{
+
+        Node* child[26];
+
+        int IsEnd, Prefix, depth;
+
+        Node(int d = 0){
+
             memset(child, 0, sizeof child);
+
             IsEnd = Prefix = 0;
+
+            depth = d;
         }
     };
 
@@ -15,15 +26,26 @@ struct Trie{
     {
         Node* cur = root;
 
-        for(auto it : s)
+        for(int i = 0; i < s.size(); i++)
         {
-            int idx = it - 'a';
+            int idx = s[i] - 'a';
 
             if(cur->child[idx] == 0)
-                cur->child[idx] = new Node();
+            {
+                cur->child[idx] = new Node(i + 1);
+
+                level[i + 1].insert(0);
+            }
 
             cur = cur->child[idx];
+
+            level[cur->depth].erase(
+                level[cur->depth].find(cur->Prefix)
+            );
+
             cur->Prefix++;
+
+            level[cur->depth].insert(cur->Prefix);
         }
 
         cur->IsEnd++;
@@ -121,10 +143,20 @@ struct Trie{
 
         else
         {
-               if(cur->child[idx] == nullptr)
+            if(cur->child[idx] == nullptr)
                 return false;
 
+            level[cur->child[idx]->depth].erase(
+                level[cur->child[idx]->depth].find(
+                    cur->child[idx]->Prefix
+                )
+            );
+
             cur->child[idx]->Prefix--;
+
+            level[cur->child[idx]->depth].insert(
+                cur->child[idx]->Prefix
+            );
         }
 
         if(cur != root &&
@@ -143,15 +175,14 @@ struct Trie{
         if(!SearchWord(s))
             return;
 
-        Node* cur = root;
-
-        for(auto c : s)
-        {
-            int idx = c - 'a';
-            cur = cur->child[idx];
-            cur->Prefix--;
-        }
-
         Delete(root, s);
+    }
+
+    int MaxPrefixAtDepth(int d)
+    {
+        if(level[d].empty())
+            return 0;
+
+        return *level[d].rbegin();
     }
 };
