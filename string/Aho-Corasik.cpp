@@ -63,4 +63,86 @@ struct AC {
         }
         return res;
     }
+
+   string smallest_all(int P) {
+
+    int FULL = (1 << P) - 1;
+
+    vector<vector<int>> vis(N, vector<int>(1 << P, 0));
+
+    struct State {
+        int node, mask;
+    };
+
+    queue<State> q;
+
+    vector<vector<pair<int,int>>> par(
+        N,
+        vector<pair<int,int>>(1 << P, {-1,-1})
+    );
+
+    vector<vector<char>> pc(
+        N,
+        vector<char>(1 << P)
+    );
+
+    q.push({0,0});
+    vis[0][0] = 1;
+
+    while (!q.empty()) {
+
+        auto [u, mask] = q.front();
+        q.pop();
+
+        if (mask == FULL) {
+
+            string res;
+
+            while (!(u == 0 && mask == 0)) {
+                res.push_back(pc[u][mask]);
+
+                auto p = par[u][mask];
+
+                u = p.first;
+                mask = p.second;
+            }
+
+            reverse(res.begin(), res.end());
+
+            return res;
+        }
+
+        for (int c = 0; c < 26; c++) {
+
+            int v = next[u][c];
+
+            int nmask = mask;
+
+            for (auto id : out[v])
+                nmask |= (1 << id);
+
+            int x = out_link[v];
+
+            while (x) {
+                for (auto id : out[x])
+                    nmask |= (1 << id);
+
+                x = out_link[x];
+            }
+
+            if (!vis[v][nmask]) {
+
+                vis[v][nmask] = 1;
+
+                par[v][nmask] = {u, mask};
+
+                pc[v][nmask] = char('a' + c);
+
+                q.push({v, nmask});
+            }
+        }
+    }
+
+    return "";  
+}
 };
