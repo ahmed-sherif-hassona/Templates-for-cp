@@ -80,6 +80,62 @@ struct SuffixArray {
         p = p_new;
     }
 
+
+
+
+
+
+    // compare pattern with suffix
+    bool cmp(const string &pat, int pos) {
+        int i = 0;
+        while(i < (int)pat.size() && pos + i < n) {
+            if(pat[i] != s[pos + i])
+                return pat[i] < s[pos + i];
+            i++;
+        }
+        return i == (int)pat.size();
+    }
+
+    bool exists(const string &pat) {
+        int l = 0, r = n - 1;
+
+        while(l <= r) {
+            int mid = (l + r) / 2;
+
+            int pos = p[mid];
+
+            if(cmp(pat, pos))
+                r = mid - 1;
+            else
+                l = mid + 1;
+        }
+
+        int idx = l;
+        if(idx < n && idx > 0) {
+            int pos = p[idx];
+            if(!cmp(pat, pos)) return true;
+        }
+
+        // check neighbors (important!)
+        for(int i = max(0, idx-1); i <= min(n-1, idx); i++) {
+            int pos = p[i];
+            bool ok = true;
+
+            for(int j = 0; j < (int)pat.size(); j++) {
+                if(pos + j >= n) { ok = false; break; }
+                if(s[pos + j] != pat[j]) { ok = false; break; }
+            }
+
+            if(ok) return true;
+        }
+
+        return false;
+    }
+
+
+
+
+
     void build_lcp() {
         rankv.resize(n);
         for(int i = 0; i < n; i++)
